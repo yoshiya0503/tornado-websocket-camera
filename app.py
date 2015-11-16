@@ -32,25 +32,32 @@ class WS(tornado.websocket.WebSocketHandler):
         camera.stream = io.BytesIO()
         time.sleep(2)
         self.camera = camera
+        self.is_rec = True
 
     def open(self):
         print('{0}:connection open'.format(self.request.remote_ip))
         t = threading.Thread(target=self.rec)
         t.setDaemon(True)
         t.start()
+        print('start rec...')
 
     def rec(self):
-        for _ in self.camera.capture_continuous(self.camera.stream, 'jpg', use_video_port=True):
+        for _ in self.camera.capture_continuous(self.camera.stream, 'jpeg', use_video_port=True):
             self.camera.stream.seek(0)
-            self.write_message(self.camera.stream.read(), binary=True)
+            try:
+                self.write_message(self.camera.stream.read(), binary=True)
+            except tornado.websocket.WebSocketClosedError:
+                pass
             self.camera.stream.seek(0)
             self.camera.stream.truncate()
-            if not self.state:
+            if not self.is_rec:
                 break
 
     def on_close(self):
-        self.status = False
+        self.is_rec = False
         self.close()
+        self.camera.stream.seek(0)
+        self.camera.stream.truncate()
         print('{0}:connection close'.format(self.request.remote_ip))
 
 if __name__ == '__main__':

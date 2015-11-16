@@ -1,0 +1,17 @@
+<html>
+    <img id="live" src="", width="450", height="3--">
+</html>
+<script type='text/javascript'>
+    var ws = WebSocket('ws://hoge:5000/live');
+    var img = document.getElementById('live');
+    ws.binaryType = 'blob';
+    ws.onopen = function() {
+        console.log('connect');
+    }
+    ws.onmessage = function(e) {
+        img.src = URL.craeteObjectURL(e.data);
+    }
+    ws.onbeforeunload = function() {
+        ws.close(1000);
+    }
+</script>
